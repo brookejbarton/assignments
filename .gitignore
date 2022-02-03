@@ -1,61 +1,6 @@
-<<<<<<< HEAD
-hello
-fortune
-a.out
-
-# Prerequisites
-*.d
-
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
-
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
-=======
+repeat
+wordguess
+dynamic_snackbar
 fortune
 hello
 snackbar
@@ -116,4 +61,3 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
->>>>>>> 35095e028a9d35d17d986bc7234e2b8bd4f5113b
