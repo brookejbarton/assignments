@@ -95,6 +95,7 @@ int main() {
     }
   }
   fclose(infile);
+//  infile = NULL; SHOULD DO THIS HERE, fclose() == free()
     
   size = strlen(chosen_word);
   stage = malloc(sizeof(char)*(size+1));
@@ -115,10 +116,10 @@ int main() {
   
   free(stage);
   free(inputted_letter);
-  free(infile);
+ // free(infile); DOING THIS CALLS A DOUBLE FREE
   stage = NULL;
   inputted_letter = NULL;
-  infile = NULL;
+  //infile = NULL;
   
   return 0;
 }

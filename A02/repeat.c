@@ -29,7 +29,9 @@ int main() {
     printf("Cannot allocate new string. Exiting...\n");
     exit(1);
   }
-  
+
+  //use memset to set all of ret_str to /0, otherwise ur using junk values and 
+  //strcat gets confused  
   strcpy(ret_str, input);
   for (int i = 0; i < total; i++){
     strcat(ret_str, input);

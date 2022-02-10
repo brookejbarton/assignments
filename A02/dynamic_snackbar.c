@@ -20,7 +20,7 @@ int main() {
   
   printf("Enter a number of snacks: ");
   scanf("%d", &n);
-  
+ //use malloc instead of doing this, bc setting snackbar[n] doesn't always work 
   struct snack snackbar[n];
   
   for (int i = 0; i < n; i++){
