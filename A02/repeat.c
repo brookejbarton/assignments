@@ -19,28 +19,18 @@ int main() {
 
   total = (strlen(input)*n);
   ret_str = malloc(sizeof(char)*(total+1));  
-  
-/*at n >= 516 returns [double free or corruption (!prev)] error, i really
-  can't figure out why but I didn't have this problem on the previous version
-  of this program 
-*/
 
   if (ret_str == NULL){
     printf("Cannot allocate new string. Exiting...\n");
     exit(1);
   }
 
-  //use memset to set all of ret_str to /0, otherwise ur using junk values and 
-  //strcat gets confused  
   strcpy(ret_str, input);
-  for (int i = 0; i < total; i++){
+  for (int i = 0; i < (n-1); i++){
     strcat(ret_str, input);
   }
  
-  printf("You word is "); 
-  for (int i = 0; i < total; i ++){
-   printf("%c", ret_str[i]);
-  }
+  printf("You word is %s", ret_str); 
   printf("\n");
 
   free(ret_str);

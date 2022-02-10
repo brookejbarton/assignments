@@ -95,7 +95,7 @@ int main() {
     }
   }
   fclose(infile);
-//  infile = NULL; SHOULD DO THIS HERE, fclose() == free()
+  infile = NULL; //SHOULD DO THIS HERE, fclose() == free()
     
   size = strlen(chosen_word);
   stage = malloc(sizeof(char)*(size+1));

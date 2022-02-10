@@ -20,8 +20,15 @@ int main() {
   
   printf("Enter a number of snacks: ");
   scanf("%d", &n);
+
  //use malloc instead of doing this, bc setting snackbar[n] doesn't always work 
-  struct snack snackbar[n];
+ //struct snack snackbar[n];
+  struct snack *snackbar = malloc(sizeof(struct snack));
+  
+  if (snackbar == NULL){
+    printf("ERROR: malloc failed!");
+    exit(1);
+  }
   
   for (int i = 0; i < n; i++){
     printf("\nEnter a name: ");
@@ -39,5 +46,8 @@ int main() {
            snackbar[i].cost, snackbar[i].quantity);
   }
   printf("\n");
+
+  free(snackbar);
+  snackbar = NULL;
   return 0;
 }

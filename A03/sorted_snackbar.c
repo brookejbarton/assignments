@@ -34,11 +34,18 @@ struct snack* insert_sorted(struct snack *snacks,
   strcpy(n->name, name);
   n->quantity = quantity;
   n->cost = cost;
+  n->next = NULL;
+
+  if (snacks == NULL){
+    return snacks;
+  }
   
-  if (snacks->name[0] > n->name[0]){ //so if n comes first alphabetically
-    n->next = snacks; 
-  } else {
-    snacks->next = n;
+  while (snacks->next != NULL){  
+    if (snacks->name[0] > n->name[0]){ //so if n comes first alphabetically
+      n->next = snacks; 
+    } else {
+      snacks->next = n;
+    }
   }
 
   return snacks;
@@ -60,7 +67,6 @@ int main() {
   scanf("%d", &n);
   
   for (int i = 0; i < n; i++){
-   // struct snack node;
     printf("\nEnter a name: ");
     scanf("%s", name);
     printf("\nEnter a cost: ");
