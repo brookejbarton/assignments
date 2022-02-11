@@ -6,6 +6,7 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct node {
   char sym;
@@ -22,7 +23,7 @@ struct node {
 // Param top: the top node of the stack (NULL if empty)
 // Returns the new top of the stack
 struct node* push(char sym, int line, int col, struct node* head) {
-  struct node *n;
+  struct node *n = malloc(sizeof(struct node));
   struct node *ret = head;
   
   n->sym = sym;
@@ -39,6 +40,9 @@ struct node* push(char sym, int line, int col, struct node* head) {
     head->next = n;
   }
 
+  if (ret==NULL){
+    return n;
+  }
   return ret;
 }
 
@@ -46,11 +50,18 @@ struct node* push(char sym, int line, int col, struct node* head) {
 // Param top: the top node of the current stack (NULL if empty)
 // Returns the new top of the stack
 struct node* pop(struct node* head) {
+  if (head == NULL){
+    return NULL;
+  }
+  if (head->next == NULL){
+    return head;
+  }
   struct node *ret = head;
-  ret->next = NULL;
-  free(head);
+  head = head->next;
+  free(ret); //POPS HEAD SO I CAN'T DO COMP WHEN RETURNED
+  ret = NULL;
 
-  return ret;
+  return head;
 }
 
 // Delete (e.g. free) all nodes in the given stack
@@ -77,40 +88,58 @@ void print(struct node* head) {
 int main(int argc, char* argv[]) {
   FILE *infile = NULL; //stdin;
   infile = fopen("prog1.c", "r");
-  char getChar;
+  char getChar = -1;
   int line = 0;
   int col = 0;
-  struct node *head = NULL;
-  struct node *pull = NULL;
-  struct node *tmp = NULL;  
-
+  struct node *head = malloc(sizeof(struct node));
+  struct node *pull = malloc(sizeof(struct node));
+  struct node *tmp = malloc(sizeof(struct node));  
+  int xloc = 0;
+  int yloc = 0;
+   
+  memset(tmp, 0, sizeof(struct node));
   //print usage if user input inocrrect num of command line args  
   
   if (infile == NULL){
     printf("Error: unable to open file %s\n", "prog1.c");  
   }
-//TO WORK ON: HOW TO READ CHAR BY CHAR?
-  while (getChar!='\0'){
+
+  while (getChar != '\0'){
     getChar = fgetc(infile);
     col+=1;
-    if (getChar = '\n'){
+    if (getChar == '\n'){
       line+=1;
+      col = 0;
     }
-    if (getChar = '{'){
+    if (getChar == '{'){
       head = push(getChar, line, col, tmp);
-    }
-    if (getChar = '}'){
       tmp = head;
-      pull = pop(head);
-      if (pull->sym == tmp->sym){
-        printf("Unmatched brace on Line %d and Column %d", line, col);
+    }
+    if (getChar == '}'){
+      if (head != NULL){
+       // xloc = head->linenum; //INVALID READ OF SIZE 4
+       // yloc = head->colnum; //so what's happening is head gets freed later so these become invalid
       }
-      else {
-        printf("Found matching braces: (%d, %d) -> (%d,%d)", tmp->linenum, 
-              tmp->colnum, pull->linenum, pull->colnum);
+
+      pull = pop(head);
+      if (pull != NULL){
+        printf("Found matching braces: (%d, %d) -> (%d, %d)\n", (pull->linenum+1), 
+                pull->colnum, xloc, yloc);
+        if (pull->next == NULL){
+          pull = NULL;
+        }
+      }
+      else { 
+        printf("Unmatched brace on Line %d and Column %d\n", (line+1), col);
+      }
+      if (pull == NULL){ 
+        head = NULL;
+        tmp = NULL;
+      } else {
+        head = pull;
+        tmp = head;
       }
     }
-  }
-  print(head); 
+  } 
   return 0;
 }
