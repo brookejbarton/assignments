@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+#include <ctype.h>
 
 struct snack {
   char name[32];
@@ -15,17 +17,112 @@ struct snack {
   struct snack* next;
 };
 
-// Insert a new node to a list (implemented as a linked list). 
-// The new node should store the given properties
-// Param snacks: the first item in the list (NULL if empty)
-// Param name: the snack name (max length is 32 characters)
-// Param quantity: the snack quantity
-// Param cost: the snack cost
-// Returns the first item in the list
-struct snack* insert_sorted(struct snack *snacks, 
-  const char *name, int quantity, float cost) {
-  struct snack *n = malloc(sizeof(struct snack));
+void clear(struct snack* snacks) {
+  struct snack* tmp;
+
+  while (snacks != NULL){
+    tmp = snacks;
+    snacks = snacks->next;
+    free(tmp);
+  }
+}
+
+void show_list(struct snack *head){
+  struct snack *tmp = malloc(sizeof(struct snack));
+  printf("\nWelcome to Sorted Sally's Snack Bar!\n\n");
+  int i = 0;
+  while (head != NULL){ 
+    printf("%d) %s  cost: $%0.2f  quantity: %d\n", i, head->name, head->cost,
+           head->quantity);
+    tmp = head->next;
+    head = tmp;
+    i+=1;
+  }
+}
+
+void get_comp_UTIL(char nameh[32], char namen[32], char *comph, char *compn){
+  int total = 0;
   
+  if (strlen(nameh) > strlen(namen)){
+    total = strlen(nameh);
+  }else {
+    total = strlen(namen);
+  }
+  for (int i = 0; i < total; i++){
+    if (nameh[i]!=namen[i]){
+      *comph = nameh[i];
+      *compn = namen[i];
+      break;
+    }
+  }
+}
+
+void get_next_comp_char(struct snack *head, struct snack *n, char *comp_head_next, char *comp_n2){
+  if (head->next != 0){
+    if (head->next->name[0] == n->name[0]){
+      get_comp_UTIL(head->next->name, n->name, comp_head_next, comp_n2);
+    }else{
+      *comp_head_next = head->next->name[0];
+      *comp_n2 = n->name[0];
+    }
+  }
+}
+
+void get_comp_char(struct snack *head, struct snack *n, char *comp_head, char *comp_n){ 
+  if (head->name[0] == n->name[0]){
+      get_comp_UTIL(head->name, n->name, comp_head, comp_n);
+  }else {
+     *comp_head = head->name[0];
+     *comp_n = n->name[0];
+  }
+}
+
+struct snack* organize(struct snack *head, struct snack *n, struct snack *tmp,
+       struct snack *ret){
+ 
+  ret = head;
+  char comp_head;
+  char comp_head_next;
+  char comp_n;
+  char comp_n2;
+
+  get_comp_char(head, n, &comp_head, &comp_n);
+  get_next_comp_char(head, n, &comp_head_next, &comp_n2);
+
+  while (head != NULL){    
+    if (comp_head > comp_n){//if n comes first
+      n->next = head;
+      return n;
+    }else if (comp_head < comp_n && head->next == NULL){//if n at end
+      head->next = n;
+      n->next = NULL;
+      return ret;
+    }else if (head->next != NULL){  
+      if (comp_head_next > comp_n2){//if n somewhere in middle
+       tmp = head->next;
+       head->next = n;
+       n->next = tmp;
+       return ret;
+      }
+    }
+    
+    tmp = head->next;
+    head = tmp;    
+    get_comp_char(head, n, &comp_head, &comp_n);
+    get_next_comp_char(head, n, &comp_head_next, &comp_n2);
+  }
+
+
+  return ret;
+}
+
+struct snack* insert_sorted(struct snack *head, char name[32], int quantity, 
+       float cost) {
+  struct snack *n = malloc(sizeof(struct snack));
+  struct snack *tmp = malloc(sizeof(struct snack));
+  struct snack *ret = malloc(sizeof(struct snack));
+  struct snack *to_return = malloc(sizeof(struct snack));
+
   if (n == NULL){
     printf("EEROR: Out of space!\n");
     exit(1);
@@ -36,24 +133,17 @@ struct snack* insert_sorted(struct snack *snacks,
   n->cost = cost;
   n->next = NULL;
 
-  if (snacks == NULL){
-    return snacks;
-  }
-  
-  while (snacks->next != NULL){  
-    if (snacks->name[0] > n->name[0]){ //so if n comes first alphabetically
-      n->next = snacks; 
-    } else {
-      snacks->next = n;
-    }
+  if (head == NULL){
+    return n;
   }
 
-  return snacks;
-}
+  to_return = organize(head, n, tmp, ret);
 
-// Delete (e.g. free) all nodes in the given list of snacks
-// Param snacks: the first node in the list (NULL if empty)
-void clear(struct snack* snacks) {
+ 
+  clear(tmp);
+  clear(n);
+  clear(ret);
+  return to_return;
 }
 
 int main() {
@@ -61,7 +151,8 @@ int main() {
   char name[32];
   int quantity = 0;
   float cost = 0;
-  struct snack* snacks;
+  struct snack *head;
+  struct snack *tmp;
 
   printf("Enter a number of snacks: ");
   scanf("%d", &n);
@@ -75,13 +166,15 @@ int main() {
     scanf("%d", &quantity);
 
     if (i == 0){
-      snacks = insert_sorted(NULL, name, cost, quantity);
+      head = insert_sorted(NULL, name, cost, quantity);
     } else {
-      insert_sorted(snacks, name, cost, quantity);
-    }
-      
+      tmp = insert_sorted(head, name, cost, quantity);
+      head = tmp;
+    }  
   }
 
+ clear(tmp);
+ clear(head);
   return 0;
 }
 
