@@ -38,6 +38,8 @@ void show_list(struct snack *head){
     head = tmp;
     i+=1;
   }
+  free(tmp);
+  tmp = NULL;
 }
 
 void get_comp_UTIL(char nameh[32], char namen[32], char *comph, char *compn){
