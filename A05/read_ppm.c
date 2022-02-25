@@ -7,46 +7,50 @@
 // Feel free to change the function signature if you prefer to implement an 
 // array of arrays
 struct ppm_pixel* read_ppm(const char* filename, int* w, int* h) {
-  //char buffer[16];
-  //char header;
-  struct pm_pixel *ret_pix;
-  int c, rgb_set;
+  struct ppm_pixel *ret_pix;
+  char buffer[128];
 
-  ret_pix = malloc(sizeof(struct ppm_pixel *));
   
   FILE *fp = fopen(filename, "rb");
   
-  //check if P6
-  //fgets(buff, sizeof(buff,), fp);
-  //if (buff[0])
   
-  c = getc(fp);
-  while (c == '#'){
-    while (c!='\n'){
-      c = getc(fp);
+  fgets(buffer, 128, fp);
+  if (buffer[0] != 'P' || buffer[1] != '6'){
+    printf("BAD");
+    exit(1);
+  }
+  
+  fgets(buffer, 128, fp);
+  if (buffer[0] == '#'){
+    while (buffer[0] == '#'){
+      fgets(buffer, 128, fp);
     }
   }
-  ungetc(c, fp);
   
-  fscanf(fp, "%d %d", w, h);
-  fscanf(fp, "%d", &rgb_set);
+  sscanf(buffer, "%d %d", w, h);
+  ret_pix = malloc(sizeof(struct ppm_pixel *)*(*w)*(*h));
   
-  fread(ret_pix, sizeof(struct ppm_pixel), 3, fp);
+  fread(ret_pix, sizeof(struct ppm_pixel), (*w)*(*h), fp);
   fclose(fp);
-
- // for (int i = 0; i < 3; i++){
-   // printf("ret_pix[%d] = (%c,%c, %c)\n", i, ret_pix[i]->red, ret_pix[i]->green, red_pix[i]->blue);
-  //}
-
-   
   
-  
-  return NULL;
+  return ret_pix;
 }
 
 // TODO: Implement this function
 // Feel free to change the function signature if you prefer to implement an 
 // array of arrays
 extern void write_ppm(const char* filename, struct ppm_pixel* pxs, int w, int h) {
+  FILE *fp = fopen(filename, "wb");
+  char buffer[128];
 
+  char newColors[3] = {pxs->red << (rand()%2), pxs->green << (rand()%2),
+                       pxs->blue << (rand()%2)};
+  fgets(buffer, 128, fp);
+  if (buffer[0]!='P' && buffer[0]!='#'){
+    fgets(buffer, 128, fp);
+    fwrite(newColors, 1, 3, fp);
+  }
+  
+
+  fclose(fp);
 }
