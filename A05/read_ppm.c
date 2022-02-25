@@ -42,11 +42,17 @@ struct ppm_pixel* read_ppm(const char* filename, int* w, int* h) {
 extern void write_ppm(const char* filename, struct ppm_pixel* pxs, int w, int h) {
   FILE *fp = fopen(filename, "wb");
   char buffer[128];
-
+  
+  //WRONG HERE
   char newColors[3] = {pxs->red << (rand()%2), pxs->green << (rand()%2),
                        pxs->blue << (rand()%2)};
+
+//  char newRed = pxs->red << (rand()%2);
+//  char newGreen = pxs->green << (rand()%2);
+//  char newBlue = pcs->blue << (rand()%2);
+//ALSO BUFFER IS NOT READING ANYTHING
   fgets(buffer, 128, fp);
-  if (buffer[0]!='P' && buffer[0]!='#'){
+  if (buffer[0]!='P' || buffer[0]!='#'){
     fgets(buffer, 128, fp);
     fwrite(newColors, 1, 3, fp);
   }
