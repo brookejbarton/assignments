@@ -3,9 +3,6 @@
 #include <string.h>
 #include "read_ppm.h"
 
-// TODO: Implement this function
-// Feel free to change the function signature if you prefer to implement an 
-// array of arrays
 struct ppm_pixel* read_ppm(const char* filename, int* w, int* h) {
   struct ppm_pixel *ret_pix;
   char buffer[128];
@@ -36,27 +33,21 @@ struct ppm_pixel* read_ppm(const char* filename, int* w, int* h) {
   return ret_pix;
 }
 
-// TODO: Implement this function
-// Feel free to change the function signature if you prefer to implement an 
-// array of arrays
 extern void write_ppm(const char* filename, struct ppm_pixel* pxs, int w, int h) {
   FILE *fp = fopen(filename, "wb");
-  char buffer[128];
-  
-  //WRONG HERE
+  int *wh = malloc(sizeof(int)*3);
+  wh[0] = w;
+  wh[1] = h;
   char newColors[3] = {pxs->red << (rand()%2), pxs->green << (rand()%2),
                        pxs->blue << (rand()%2)};
 
-//  char newRed = pxs->red << (rand()%2);
-//  char newGreen = pxs->green << (rand()%2);
-//  char newBlue = pcs->blue << (rand()%2);
-//ALSO BUFFER IS NOT READING ANYTHING
-  fgets(buffer, 128, fp);
-  if (buffer[0]!='P' || buffer[0]!='#'){
-    fgets(buffer, 128, fp);
-    fwrite(newColors, 1, 3, fp);
-  }
-  
+  fwrite("P6\n", 1, 3, fp);
+  fwrite("# glitched ver\n", 1, 15, fp);
+  fwrite(wh, sizeof(int), 1, fp);
+  fwrite(" ", 1, 1, fp);
+  fwrite(wh, sizeof(int), 1, fp);
+  fwrite("\n", 1, 1, fp);
+  fwrite(newColors, sizeof(char), 3, fp); 
 
   fclose(fp);
 }
