@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-:w:w
-char* convert_bit(unsigned char color, char *bits){
+
+/*char* convert_bit(unsigned char color, char *bits){
   char odd = '1';
   char even = '0';
 
@@ -15,7 +15,7 @@ char* convert_bit(unsigned char color, char *bits){
   }
 
   return bits;
-}
+}*/
 
 char* bit_to_ASCII(char bits[72]){ //param will be char*
   char binstr[8];
@@ -56,15 +56,24 @@ int main(int argc, char** argv) {
   struct ppm_pixel *rgb;
   int w = 0;
   int h = 0;
-  
+  int count = 0;
   rgb = read_ppm(argv[1], &w, &h);
-  char *bits = malloc((sizeof(int)*sizeof(rgb))+1);
-//JUST CYCLES THORUGH 255 3 TIMES  
-    for (int i = 0; i < 3; i++){
-      convert_bit(rgb->red, bits);
-      convert_bit(rgb->green, bits);
-      convert_bit(rgb->blue, bits);
+
+  unsigned char *bits = malloc((sizeof(int)*(w*h)+1));
+  memset(bits, 0, (w*h)); 
+  for (int i = 0; i < h; i++){
+    for (int j = 0; j < w; j++){
+      int idx = i*w+j;
+      bits[count] = rgb[idx].red;
+      bits[count+1] = rgb[idx].green;
+      bits[count+2] = rgb[idx].blue;
+      count++;
+      printf("%d, %d, %d", rgb[idx].red, rgb[idx].green, rgb[idx].blue);
     }
+    printf("\n");
+  }
+
+  printf("bits: %s", bits);
   char practice[72] = {0,0,1,1,0,0,0,1,0,0,1,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0};
   char *ascii = bit_to_ASCII(practice);
   printf("%s", ascii);
