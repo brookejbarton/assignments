@@ -6,12 +6,13 @@
 #include <stdio.h>
 #include <string.h>
 
-int main() {
-	char input[100];
-	printf("Enter a word: ");
-	scanf("%s", input);
-	badification(input);
-	return 0;
+void print(char input[]){
+   int n = strlen(input);
+   printf("Your bad password is ");
+   for (int i = 0; i < n; i++){
+     printf("%c", input[i]);
+   }
+  printf("\n");
 }
 
 void badification(char input[]){
@@ -30,11 +31,10 @@ void badification(char input[]){
 	print(input);
 }
 
-void print(char input[]){
-	int n = strlen(input);
-	printf("Your bad password is ");
-	for (int i = 0; i < n; i++){
-		printf("%c", input[i]);
-	}
-	printf("\n");
+int main() {
+  char input[100];
+  printf("Enter a word: ");
+  scanf("%s", input);
+  badification(input);
+  return 0;
 }
