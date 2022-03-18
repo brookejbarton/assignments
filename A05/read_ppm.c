@@ -36,19 +36,16 @@ struct ppm_pixel* read_ppm(const char* filename, int* w, int* h) {
 
 extern void write_ppm(const char* filename, struct ppm_pixel* pxs, int w, int h) {
   FILE *fp = fopen(filename, "wb");
-  int *wh = malloc(sizeof(int)*3);
-  wh[0] = w;
-  wh[1] = h;
-  char newColors[3] = {pxs->red << (rand()%2), pxs->green << (rand()%2),
-                       pxs->blue << (rand()%2)};
-
-  fwrite("P6\n", 1, 3, fp);
-  fwrite("# glitched ver\n", 1, 15, fp);
-  fwrite(wh, sizeof(int), 1, fp);
-  fwrite(" ", 1, 1, fp);
-  fwrite(wh, sizeof(int), 1, fp);
-  fwrite("\n", 1, 1, fp);
-  fwrite(newColors, sizeof(char), 3, fp); 
+  if (fp == NULL){
+    printf("ERROR: unable to open file.\n");
+    exit(1);
+  }
+  
+  fprintf(fp, "P6\n");
+  fprintf(fp, "# comments\n");
+  fprintf(fp, "%d %d\n", w, h);
+  fprintf(fp, "%d\n", 255);
+  fwrite(pxs->colors, sizeof(pxs->colors), 3*w*h, fp);
 
   fclose(fp);
 }
