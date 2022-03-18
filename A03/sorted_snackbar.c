@@ -18,13 +18,21 @@ struct snack {
 };
 
 void clear(struct snack* snacks) {
-  struct snack* tmp;
+  struct snack* tmp = malloc(sizeof(struct snack));
+
+  if (tmp == NULL){
+    printf("ERROR: out of space!\n");
+  }
 
   while (snacks != NULL){
     tmp = snacks;
     snacks = snacks->next;
-    free(tmp);
+    if (tmp != NULL){
+      free(tmp);
+    }
   }
+
+  tmp = NULL;
 }
 
 void show_list(struct snack *head){
@@ -119,17 +127,24 @@ struct snack* organize(struct snack *head, struct snack *n, struct snack *tmp,
 }
 
 struct snack* insert_sorted(struct snack *head, char name[32], int quantity, 
-       float cost) {
+       float cost, struct snack *to_return) {
   struct snack *n = malloc(sizeof(struct snack));
   struct snack *tmp = malloc(sizeof(struct snack));
   struct snack *ret = malloc(sizeof(struct snack));
-  struct snack *to_return = malloc(sizeof(struct snack));
-
-  if (n == NULL){
-    printf("EEROR: Out of space!\n");
+  
+  if (n == NULL || tmp == NULL || ret == NULL){
+    printf("ERROR: Out of space!\n");
     exit(1);
   }
   
+   strcpy(tmp->name,"holder");
+   tmp->cost = 0;
+   tmp->next = NULL;
+
+   strcpy(ret->name, "ret");
+   ret->cost = 0;
+   ret->next = NULL; 
+ 
   strcpy(n->name, name);
   n->quantity = quantity;
   n->cost = cost;
@@ -140,11 +155,13 @@ struct snack* insert_sorted(struct snack *head, char name[32], int quantity,
   }
 
   to_return = organize(head, n, tmp, ret);
-
  
-  clear(tmp);
-  clear(n);
-  clear(ret);
+  free(tmp);
+  free(n);
+  free(ret);
+  tmp = NULL;
+  n = NULL;
+  ret = NULL;
   return to_return;
 }
 
@@ -153,9 +170,17 @@ int main() {
   char name[32];
   int quantity = 0;
   float cost = 0;
-  struct snack *head;
-  struct snack *tmp;
+  struct snack *head = malloc(sizeof(struct snack));
+  struct snack *tmp = malloc(sizeof(struct snack));
+  struct snack *ret = malloc(sizeof(struct snack));
 
+  if (head == NULL || tmp == NULL || ret == NULL){
+    printf("ERROR: out of space!\n");
+    exit(1);
+  }
+
+  memset(ret, 0, 0);
+  
   printf("Enter a number of snacks: ");
   scanf("%d", &n);
   
@@ -168,15 +193,20 @@ int main() {
     scanf("%d", &quantity);
 
     if (i == 0){
-      head = insert_sorted(NULL, name, cost, quantity);
+      head = insert_sorted(NULL, name, cost, quantity, ret);
     } else {
-      tmp = insert_sorted(head, name, cost, quantity);
+      tmp = insert_sorted(head, name, cost, quantity, ret);
       head = tmp;
     }  
   }
 
- clear(tmp);
- clear(head);
+ show_list(head);
+ free(tmp);
+ free(head);
+ free(ret);
+ tmp = NULL;
+ head = NULL;
+ ret = NULL;
   return 0;
 }
 

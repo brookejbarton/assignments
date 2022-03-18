@@ -11,10 +11,12 @@ int main() {
   int j = 0;
   
   for (int i = 0; i < strlen(word); i++){
-    sprintf(hex + j, "%02X", word[i]);
-    word_int += hex[i]*(16^i);
+    sprintf(hex + j, "%02x", word[i]);
+    printf("char %c: %02x\n", word[i], word[i]);
     j+=2;
   } 
+
+  word_int = strtol(hex, NULL, 16);
   printf("Your number is: %d (0x%s)\n", word_int, hex);
 
   free(word);

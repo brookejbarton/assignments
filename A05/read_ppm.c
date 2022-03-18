@@ -13,7 +13,7 @@ struct ppm_pixel* read_ppm(const char* filename, int* w, int* h) {
   
   fgets(buffer, 128, fp);
   if (buffer[0] != 'P' || buffer[1] != '6'){
-    printf("BAD");
+    printf("ERROR: wrong kind of file.");
     exit(1);
   }
   
@@ -26,7 +26,8 @@ struct ppm_pixel* read_ppm(const char* filename, int* w, int* h) {
   
   sscanf(buffer, "%d %d", w, h);
   ret_pix = malloc(sizeof(struct ppm_pixel *)*(*w)*(*h));
-  
+
+  fgets(buffer, 128, fp);  
   fread(ret_pix, sizeof(struct ppm_pixel), (*w)*(*h), fp);
   fclose(fp);
   

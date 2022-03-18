@@ -24,7 +24,7 @@ struct node {
 // Returns the new top of the stack
 struct node* push(char sym, int line, int col, struct node* head) {
   struct node *n = malloc(sizeof(struct node));
-  struct node *ret = head;
+  //struct node *ret = head;
   
   n->sym = sym;
   n->linenum = line;
@@ -34,16 +34,18 @@ struct node* push(char sym, int line, int col, struct node* head) {
   if (head == NULL){
     return n;
   } else {
-    while (head->next != NULL){
-      head = head->next;    
-    }
-    head->next = n;
+    n->next = head;
+    head = n;
+    //while (head->next != NULL){
+     // head = head->next;    
+    //}
+    //head->next = n;
   }
 
-  if (ret==NULL){
-    return n;
-  }
-  return ret;
+  //if (ret==NULL){
+   // return n;
+  //}
+  return head;
 }
 
 // Pop the top node from a stack (implemented as a linked list) and frees it
@@ -53,10 +55,14 @@ struct node* pop(struct node* head) {
   if (head == NULL){
     return NULL;
   }
+  
+  struct node *ret = head;
+  
   if (head->next == NULL){
+    free(ret);
     return head;
   }
-  struct node *ret = head;
+
   head = head->next;
   free(ret); //POPS HEAD SO I CAN'T DO COMP WHEN RETURNED
   ret = NULL;
@@ -87,7 +93,7 @@ void print(struct node* head) {
 
 int main(int argc, char* argv[]) {
   FILE *infile = NULL; //stdin;
-  infile = fopen("prog1.c", "r");
+  infile = fopen(argv[1], "r");
   char getChar = -1;
   int line = 0;
   int col = 0;
@@ -101,11 +107,13 @@ int main(int argc, char* argv[]) {
   //print usage if user input inocrrect num of command line args  
   
   if (infile == NULL){
-    printf("Error: unable to open file %s\n", "prog1.c");  
+    printf("Error: unable to open file %s\n", argv[1]);
+    exit(1);  
   }
 
   while (getChar != '\0'){
-    getChar = fgetc(infile);
+    getChar = getc(infile);
+
     col+=1;
     if (getChar == '\n'){
       line+=1;

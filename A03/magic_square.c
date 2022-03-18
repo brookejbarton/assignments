@@ -125,7 +125,7 @@ int main() {
     AND GO THROUGH AND EDIT ALL INT CONVERSIONS
   */
     while (token != NULL){ //only adds valuable chars into array
-      input[pos] = (token -'0');  
+      input[pos] = (*token-'0');  
       
       //sscanf(token, "%d", input);
       //strcat(input, token);
