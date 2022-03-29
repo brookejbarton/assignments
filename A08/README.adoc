@@ -1,11 +1,11 @@
 = Hardware specifications
 
 Where did your run your tests? A laptop, or goldengate?
-
+Laptop
 
 What are the performance specifications of the machine: number and speed of
 processors, size of RAM? (use `lscpu` and `free -m`)
-
+4 processors @2.5 GHz, 8.0 GB
 
 = Allocations
 
