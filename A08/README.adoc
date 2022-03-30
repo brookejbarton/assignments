@@ -10,11 +10,20 @@ processors, size of RAM? (use `lscpu` and `free -m`)
 = Allocations
 
 In `simple.c`, where does the increase in 1040 bytes come from?
+The break value is 1040 and the increment is 0, so the value advances only 1040 bytes.
 Why is the value 1040 bytes?
-
+sbrk() returns the "prior break value" so the first call to sbrk(0) returns
+the beginning of the program. The second sbrk(0) call
+sbrk, or mmap can be used to request that the OS change the total capacity of heap memory.
 
 How many bytes does `mylloc_list.c` allocate when the program ends? Explain why
 this amount makes sense.
+1156 bytes. It makes sense that the amount allocated increases the same amount
+for each turn through the loop because "test" is malloced and freed immediately.
+The 1156 bytes itself makes sense because, as learned through print.c, the initial
+break value is 1040. That leaves 116 bytes. 100 of those can be attributed to test.
+Of the remaining 16, 4 must be using in declaring allocated. then the remaining 12
+could come from the print statements?
 
 
 = Fragementation
