@@ -10,21 +10,103 @@ processors, size of RAM? (use `lscpu` and `free -m`)
 = Allocations
 
 In `simple.c`, where does the increase in 1040 bytes come from?
-The break value is 1040 and the increment is 0, so the value advances only 1040 bytes.
-Why is the value 1040 bytes?
-sbrk() returns the "prior break value" so the first call to sbrk(0) returns
-the beginning of the program. The second sbrk(0) call
-sbrk, or mmap can be used to request that the OS change the total capacity of heap memory.
+sbrk() returns the value of the current program break if the increment is 0, which it is in both cases.
+This means that we are able to track the amount of memory when making an initial allocation.
+It's 1040 bytes because the default memory allocation algorithim allows a certain degree of internal
+fragmentation.
 
 How many bytes does `mylloc_list.c` allocate when the program ends? Explain why
 this amount makes sense.
-1156 bytes. It makes sense that the amount allocated increases the same amount
+1156 bytes. It makes sense that the amount allocated is constant
 for each turn through the loop because "test" is malloced and freed immediately.
 The 1156 bytes itself makes sense because, as learned through print.c, the initial
-break value is 1040. That leaves 116 bytes. 100 of those can be attributed to test.
-Of the remaining 16, 4 must be using in declaring allocated. then the remaining 12
-could come from the print statements?
+allocation is 1040bytes. That leaves 116 bytes. 100 of those can be attributed to test.
+Of the remaining 16, this could be due to internal fragmentation? Since 16 is a power of
+two.
 
 
-= Fragementation
+ = Fragmentation
+ Fragmentation is whenever your memory is broken up into difficult to use chunks, such that, despite
+ there being a relatively high space in memory, the chunks are unusable. This leads to memory/allocation
+ exceptions.
+ Internal and external are two types of fragmentation. So let's say malloc is looking for
+ a chunk of memory. First, it's going to go through the pre-existing chunks to check if there are
+ any that are free and of appropriate size (as in, bigger than the size of memory being called for).
+ Once it finds a chunk (and how it will find the chunk is dependent on the implemented algorithim)
+ it will put into use whatever size of memory was called, regardless of whether the chunk is bigger
+ than the actual needed size. For example, let's say there's a chunk with 150bytes of memory and malloc
+ is looking to store 90. It'll choose that chunk but only utilize 90/150bytes. This is internal
+ fragmentation because those remaining 60bytes don't just stop existing. Instead they're unusable because
+ they're tethered to this chunk which is now, according to the algorithim, in use. So when malloc needs to
+ find another chunk of memory, the 150byte chunk will be skipped over. Those 60bytes will be "lost" until
+ that entire 150byte chunk is freed. 
+ A solution to internal fragmentation is to split up pre-existing chunks such that only the called for size
+ is used. So, in the earlier example, this would mean that instead of using the entire 150byte chunk, the chunk
+ gets split up into two chunks of 90 and 60 bytes. This allows the 60bytes to be used at a later time. However,
+ you eventually run into another problem when splitting up pre-existing chunks. After a while, the size of a chunk
+ grows really small, basically unusably small. This is external fragmentation, and also leads to "lost" bytes.  
+
+
+This looks odd to me because the total number of blocks keeps fluctuating
+The initial top of the heap is 0x5632c1307000.
+Total blocks: 103, Free: 36, Used: 67
+Free: largest - 3984, smallest - 10, average - 1614
+In use: largest - 3741, smallest - 16, average - 1005
+0
+The current top of the heap is 0x5632c135d527.
+Increased by 345 (0x159) Kbyte
+Total blocks: 23, Free: 7, Used: 16
+Free: largest - 3998, smallest - 378, average - 3603
+In use: largest - 1659, smallest - 63, average - 727
+1
+The current top of the heap is 0x5632c1368aee.
+Increased by 390 (0x186) Kbyte
+Total blocks: 27, Free: 10, Used: 17
+Free: largest - 3999, smallest - 492, average - 3418
+In use: largest - 1368, smallest - 20, average - 430
+2
+The current top of the heap is 0x5632c13740f3.
+Increased by 436 (0x1b4) Kbyte
+Total blocks: 34, Free: 14, Used: 20
+Free: largest - 3998, smallest - 776, average - 3091
+In use: largest - 3925, smallest - 12, average - 1222
+3
+The current top of the heap is 0x5632c1388867.
+Increased by 518 (0x206) Kbyte
+Total blocks: 34, Free: 9, Used: 25
+Free: largest - 3996, smallest - 17, average - 2850
+In use: largest - 2313, smallest - 77, average - 1098
+4
+The current top of the heap is 0x5632c139c775.
+Increased by 597 (0x255) Kbyte
+Total blocks: 20, Free: 9, Used: 11
+Free: largest - 3999, smallest - 45, average - 2414
+In use: largest - 3905, smallest - 26, average - 1284
+5
+The current top of the heap is 0x5632c13ac41e.
+Increased by 661 (0x295) Kbyte
+Total blocks: 29, Free: 10, Used: 19
+Free: largest - 4000, smallest - 727, average - 3217
+In use: largest - 3362, smallest - 18, average - 1135
+6
+The current top of the heap is 0x5632c13b627a.
+Increased by 700 (0x2bc) Kbyte
+Total blocks: 28, Free: 11, Used: 17
+Free: largest - 3997, smallest - 35, average - 3023
+In use: largest - 2281, smallest - 28, average - 607
+7
+The current top of the heap is 0x5632c13c7035.
+Increased by 768 (0x300) Kbyte
+Total blocks: 21, Free: 12, Used: 9
+Free: largest - 3999, smallest - 32, average - 3106
+In use: largest - 2960, smallest - 22, average - 911
+8
+The current top of the heap is 0x5632c13d54b8.
+Increased by 825 (0x339) Kbyte
+Total blocks: 25, Free: 8, Used: 17
+Free: largest - 4000, smallest - 283, average - 3460
+In use: largest - 2249, smallest - 8, average - 641
+9
+The current top of the heap is 0x5632c13dc0e7.
+Increased by 852 (0x354) Kbyte
 

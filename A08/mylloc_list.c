@@ -42,7 +42,7 @@ void *malloc (size_t size) {
       return (void*) (cnk + 1);
     }
   } else { 
-    //best fit
+    //best fit -- doesn't work
     int best_fit = 0;
     while (next!=NULL){
         if (next->size >= size && next->size <= best_fit){
@@ -66,6 +66,7 @@ void *malloc (size_t size) {
       } else {
         struct chunk* cnk = (struct chunk*) memory;
         cnk->size = size;
+        cnk->in_use = size;
         return (void*) (cnk + 1);
       }
   }
@@ -116,6 +117,7 @@ void fragstats(void* buffers[], int len) {
         s_free = flist->size;
       } else if (flist->size < s_free) s_free = flist->size;
     }
+
     flist = flist->next;
   }
 

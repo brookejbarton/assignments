@@ -11,29 +11,10 @@ int main (int argc, char* argv[]) {
   printf("The initial top of the heap is %p.\n", init);
 
   void *current = sbrk(0);
-  printf("The current top of the heap is %p. \n", current);
+  printf("The current top of the heap is %p.\n", current);
 
-  int allocated = (int) ((current - init)); /// 1024);
-  printf("Increased by %d (0x%x) byte\n", allocated, allocated);
- /* for (int j = 0 ; j < ROUNDS; j++) {
-  
-    for (int i= 0 ; i < LOOP ; i++) {
-      size_t size = randRange(sizeof(int), 4000);
-      int *memory = NULL;
-      memory = malloc(size);
-      if (memory == NULL) {
-        fprintf(stderr, "malloc failed\n");
-        return(1);
-      } 
-      *memory = 123;
-      free(memory);
-    }
-    current = sbrk(0);
-    int allocated = (int) ((current - init) / 1024);
-    printf("%d\n" , j);
-    printf("The current top of the heap is %p.\n", current);
-    printf("Increased by %d (0x%x) byte\n", allocated, allocated);
-  }*/
+  int allocated = (int) ((current - init));
+  printf("Increased by %d (0x%x) bytes\n", allocated, allocated);
 
   return 0 ;
 }
