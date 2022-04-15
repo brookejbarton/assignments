@@ -11,6 +11,78 @@
 #include <string.h>
 #include <sys/mman.h>
 
+
+void post_fork(double timer, int size, struct ppm_pixel *to_pass, struct ppm_pixel *pallet){
+  printf("Computed mandelbrot set (%dx%d) in %f seconds\n", size, size, timer);
+  
+  int timestamp = time(0);
+  char name1[] = "mandelbrot-";
+  char sizestr[20];
+  sprintf(sizestr, "%d", size);
+  strcat(name1, sizestr);
+  strcat(name1,"-");
+  char timestr[20];
+  sprintf(timestr, "%d", timestamp);
+  strcat(name1, timestr);
+  strcat(name1, ".ppm");
+  const char *filename = name1;
+
+  if (filename == NULL){
+    printf("Unable to create file.\n");
+    exit(1);
+  }
+
+  printf("Writing file: %s\n", name1);
+
+  write_ppm(filename, to_pass, size, size);
+
+  free(to_pass);
+  to_pass = NULL;
+  free(pallet);
+  pallet = NULL;
+}
+
+void mandelbrot(int start_col, int end_col, int start_row, int end_row, struct ppm_pixel *pallet, struct ppm_pixel *to_pass){
+  float xmin = -2.0;
+  float xmax = 0.47;
+  float ymin = -1.12;
+  float ymax = 1.12;
+  int maxIterations = 1000;
+  int size = 240;
+  
+  // compute image
+  for (int i = start_col; i < end_col; i++){ 
+    for (int j = start_row; j < end_row; j++){
+      float xfrac = (float)(j) / size;
+      float yfrac = (float)(i) / size;
+
+      float x0 = xmin + xfrac * (xmax - xmin);
+      float y0 = ymin + yfrac * (ymax - ymin);
+
+      float x = 0;
+      float y = 0;
+      int iter = 0; 
+    
+      while (iter < maxIterations && x*x + y*y < 2*2){
+        float xtmp = x*x - y*y + x0;
+        y = 2*x*y + y0;
+        x = xtmp;
+        iter++;
+      }
+
+      if (iter < maxIterations){ // escaped
+        to_pass[i*size+j].red = pallet[iter].red;
+        to_pass[i*size+j].green = pallet[iter].green;
+        to_pass[i*size+j].blue = pallet[iter].blue;
+      } else { 
+        to_pass[i*size+j].red = 0;
+        to_pass[i*size+j].green = 0;
+        to_pass[i*size+j].blue = 0;
+      } 
+    }
+  }
+}
+
 int main(int argc, char* argv[]) {
   int size = 480;
   float xmin = -2.0;
@@ -18,6 +90,7 @@ int main(int argc, char* argv[]) {
   float ymin = -1.12;
   float ymax = 1.12;
   int maxIterations = 1000;
+
   int numProcesses = 4;
 
   double timer;
@@ -57,100 +130,44 @@ int main(int argc, char* argv[]) {
 
   //allocating shared memory
 
-  struct ppm_pixel *to_pass = malloc(sizeof(struct ppm_pixel)*(size)*(size));//mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);//
+  struct ppm_pixel *to_pass = mmap(NULL, sizeof(struct ppm_pixel)*(size)*(size), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);//malloc(sizeof(struct ppm_pixel)*(size)*(size));
+
+  int start_col = 0;
+  int end_col = 240;
+
+  int start_row = 0;
+  int end_row = 240;
   
+  for (int i = 0; i < numProcesses; i++){
+    if (fork() == 0){
+      mandelbrot(start_col, end_col, start_row, end_row, pallet, to_pass);
+      printf("Launched child process: %d\n", getpid());
+      printf("%d) Sub-image block: cols (%d, %d) to rows (%d, %d)\n", getpid(), start_col, end_col, start_row, end_row);
+    } else {
+      wait(NULL);
+    }
 
-  // compute image
-  for (int i = 0; i < size; i++){ 
-    for (int j = 0; j < size; j++){
-      float xfrac = (float)(j) / size;
-      float yfrac = (float)(i) / size;
-    //  printf("xfrac: %f, yfrac: %f\n", xfrac, yfrac);
+    if (i == 0){
+      start_col = end_col;
+      end_col+=240;
+    }
+    if (i == 1){
+      start_col = 0;
+      end_col = 240;
 
-      float x0 = xmin + xfrac * (xmax - xmin);
-      float y0 = ymin + yfrac * (ymax - ymin);
-
-      float x = 0;
-      float y = 0;
-      int iter = 0; 
-    
-      while (iter < maxIterations && x*x + y*y < 2*2){
-        float xtmp = x*x - y*y + x0;
-        y = 2*x*y + y0;
-        x = xtmp;
-        iter++;
-       // printf("Y: %f, X: %f, ITER: %d\n", y, x, iter);
-      }
-
-     // escaped
-        if (x < 0 && y > 0 && iter < maxIterations){ 
-          if (fork()==0){ //child 1
-            to_pass[i*size+j].red = pallet[iter].red;
-            to_pass[i*size+j].green = pallet[iter].green;
-            to_pass[i*size+j].blue = pallet[iter].blue;
-          } else {
-            wait(NULL);
-          }
-        } else if (x > 0 && y > 0 && iter < maxIterations){
-          if (fork()==0){ //child 2
-            to_pass[i*size+j].red = pallet[iter].red;
-            to_pass[i*size+j].green = pallet[iter].green;
-            to_pass[i*size+j].blue = pallet[iter].blue;
-          } else {
-            wait(NULL);
-          }
-        } else if (x < 0 && y < 0 && iter < maxIterations){
-          if (fork()==0){ //child 3
-            to_pass[i*size+j].red = pallet[iter].red;
-            to_pass[i*size+j].green = pallet[iter].green;
-            to_pass[i*size+j].blue = pallet[iter].blue;
-          } else {
-            wait(NULL);
-          }
-        } else if (x > 0 && y < 0 && iter < maxIterations){
-          if (fork()==0){ //child 4
-            to_pass[i*size+j].red = pallet[iter].red;
-            to_pass[i*size+j].green = pallet[iter].green;
-            to_pass[i*size+j].blue = pallet[iter].blue;
-          } else {
-            wait(NULL);
-          }
-        } else{
-          to_pass[i*size+j].red = 0;
-          to_pass[i*size+j].green = 0;
-          to_pass[i*size+j].blue = 0;
-        }
-  
-       //printf("color: %d, %d, %d", to_pass[i*size+j].red, to_pass[i*size+j].green, to_pass[i*size+j].blue);
+      start_row = end_row;
+      end_row+=240;
+    }
+    if (i == 2){
+      start_col = end_col;
+      end_col+=240;
     }
   }
 
+  printf("Child process complete: %d\n", getpid());
+
   gettimeofday(&tend, NULL);
   timer = tend.tv_sec - tstart.tv_sec + (tend.tv_usec - tstart.tv_usec)/1.e6;
-  printf("Computed mandelbrot set (%dx%d) in %f seconds\n", size, size, timer);
-  
-  int timestamp = time(0);
-  char name1[] = "mandelbrot-";
-  char sizestr[20];
-  sprintf(sizestr, "%d", size);
-  strcat(name1, sizestr);
-  strcat(name1,"-");
-  char timestr[20];
-  sprintf(timestr, "%d", timestamp);
-  strcat(name1, timestr);
-  strcat(name1, ".ppm");
-  const char *filename = name1;
 
-  if (filename == NULL){
-    printf("Unable to create file.\n");
-    exit(1);
-  }
-  printf("Writing file: %s\n", name1);
-
-  write_ppm(filename, to_pass, size, size);
-
-  free(to_pass);
-  to_pass = NULL;
-  free(pallet);
-  pallet = NULL;
+  post_fork(timer, size, to_pass, pallet);
 }
