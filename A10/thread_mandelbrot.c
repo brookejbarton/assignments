@@ -17,56 +17,47 @@ struct mandel_pack {
   int end_row;
   struct ppm_pixel *pallet;
   struct ppm_pixel *to_pass;
+  float xmin;
+  float xmax;
+  float ymin;
+  float ymax;
+  int maxIterations;
+  int size;
 };
 
 void *mandelbrot(void *args){
   struct mandel_pack *pack = (struct mandel_pack *)args;
-  int size = 480;
   printf("Thread %ld) sub-image block: cols (%d, %d) to rows (%d, %d)\n", 
         pthread_self(), pack->start_col, pack->end_col, pack->start_row, pack->end_row);
- /** for (int i = pack->start_col; i < pack->end_col; i++){ 
-    for (int j = pack->start_row; j < pack->end_row; j++){
-      pack->to_pass[i*size+j].red = pack->start_col%255;
-        pack->to_pass[i*size+j].green = pack->start_row%255;
-        pack->to_pass[i*size+j].blue = 0;
-
-    }
-  }*/
-  
-  float xmin = -2.0;
-  float xmax = 0.47;
-  float ymin = -1.12;
-  float ymax = 1.12;
-  int maxIterations = 1000;
   
   // compute image
   for (int i = pack->start_col; i < pack->end_col; i++){ 
     for (int j = pack->start_row; j < pack->end_row; j++){
-      float xfrac = (float)(j) / size;
-      float yfrac = (float)(i) / size;
+      float xfrac = (float)(j) / pack->size;
+      float yfrac = (float)(i) / pack->size;
 
-      float x0 = xmin + xfrac * (xmax - xmin);
-      float y0 = ymin + yfrac * (ymax - ymin);
+      float x0 = pack->xmin + xfrac * (pack->xmax - pack->xmin);
+      float y0 = pack->ymin + yfrac * (pack->ymax - pack->ymin);
 
       float x = 0;
       float y = 0;
       int iter = 0; 
     
-      while (iter < maxIterations && x*x + y*y < 2*2){
+      while (iter < pack->maxIterations && x*x + y*y < 2*2){
         float xtmp = x*x - y*y + x0;
         y = 2*x*y + y0;
         x = xtmp;
         iter++;
       }
 
-      if (iter < maxIterations){ // escaped
-        pack->to_pass[i*size+j].red = pack->pallet[iter].red;
-        pack->to_pass[i*size+j].green = pack->pallet[iter].green;
-        pack->to_pass[i*size+j].blue = pack->pallet[iter].blue;
+      if (iter < pack->maxIterations){ // escaped
+        pack->to_pass[i*pack->size+j].red = pack->pallet[iter].red;
+        pack->to_pass[i*pack->size+j].green = pack->pallet[iter].green;
+        pack->to_pass[i*pack->size+j].blue = pack->pallet[iter].blue;
       } else { 
-        pack->to_pass[i*size+j].red = 0;
-        pack->to_pass[i*size+j].green = 0;
-        pack->to_pass[i*size+j].blue = 0;
+        pack->to_pass[i*pack->size+j].red = 0;
+        pack->to_pass[i*pack->size+j].green = 0;
+        pack->to_pass[i*pack->size+j].blue = 0;
       } 
     }
   }
@@ -116,13 +107,20 @@ int main(int argc, char* argv[]) {
     pallet[i].red = basered + rand() % 100 - 50; //rand() % 255;
     pallet[i].green = basegreen + rand() % 100 - 50; //rand() % 255;
     pallet[i].blue = baseblue + rand() % 100 - 50; //rand() % 255;
- // printf("pallet: r %d, g %d, b %d\n", pallet[i].red, pallet[i].green, pallet[i].blue);
   }
 
   pthread_t *thread_array = malloc(numProcesses * sizeof(pthread_t));
   struct ppm_pixel *to_pass = malloc(sizeof(struct ppm_pixel)*(size)*(size));
-  struct mandel_pack q_pack[4];
-  long *thread_ids = malloc(numProcesses*sizeof(long));
+  struct mandel_pack *q_pack = calloc(numProcesses, sizeof(struct mandel_pack));
+
+  for (int i = 0; i < numProcesses; i ++){
+    q_pack[i].xmin = -2.0;
+    q_pack[i].xmax = 0.47;
+    q_pack[i].ymin = -1.12;
+    q_pack[i].ymax = 1.12;
+    q_pack[i].maxIterations = 1000;
+    q_pack[i].size = 480;
+  }
 
   //quadrant 1
     q_pack[0].start_col = 0;
@@ -157,14 +155,14 @@ int main(int argc, char* argv[]) {
     q_pack[3].to_pass = to_pass;
 
   for (int i = 0; i < numProcesses; i++){
-    if (pthread_create(&thread_array[i], NULL, &mandelbrot, (void *)&q_pack[i]) != 0){ //var pointer, NULL, function pointer, function args pointers
+    if (pthread_create(&thread_array[i], NULL, &mandelbrot, (void *)&q_pack[i]) != 0){
       printf("ERROR: thread q%d could not be created.\n", i);
       exit(1);
     }
   }
 
   for (int i = 0; i < numProcesses; i++){
-    if (pthread_join(thread_array[i], NULL) != 0){ //actual var, return val for function ret
+    if (pthread_join(thread_array[i], NULL) != 0){
       printf("ERROR: thread q%d could not be joined.\n", i);
       exit(1);
     } else {
@@ -204,6 +202,6 @@ int main(int argc, char* argv[]) {
   pallet = NULL;
   free(thread_array);
   thread_array = NULL;
-  free(thread_ids);
-  thread_ids = NULL;
+  free(q_pack);
+  q_pack = NULL;
 }
