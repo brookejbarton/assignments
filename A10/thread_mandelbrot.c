@@ -8,6 +8,7 @@
 #include <sys/mman.h>
 #include <string.h>
 #include <sys/time.h>
+#include <sys/shm.h>
 
 struct mandel_pack {
   int start_col;
@@ -20,17 +21,23 @@ struct mandel_pack {
 
 void *mandelbrot(void *args){
   struct mandel_pack *pack = (struct mandel_pack *)args;
-  
+  int size = 480;
   printf("Thread %ld) sub-image block: cols (%d, %d) to rows (%d, %d)\n", 
         pthread_self(), pack->start_col, pack->end_col, pack->start_row, pack->end_row);
-  
+ /** for (int i = pack->start_col; i < pack->end_col; i++){ 
+    for (int j = pack->start_row; j < pack->end_row; j++){
+      pack->to_pass[i*size+j].red = pack->start_col%255;
+        pack->to_pass[i*size+j].green = pack->start_row%255;
+        pack->to_pass[i*size+j].blue = 0;
+
+    }
+  }*/
   
   float xmin = -2.0;
   float xmax = 0.47;
   float ymin = -1.12;
   float ymax = 1.12;
   int maxIterations = 1000;
-  int size = 240;
   
   // compute image
   for (int i = pack->start_col; i < pack->end_col; i++){ 
@@ -64,8 +71,7 @@ void *mandelbrot(void *args){
     }
   }
 
-  printf("Thread %ld) finished\n", pthread_self());
-  pthread_exit(NULL); //WHY DOES IT SAY MY FUNC RETURNS SOMETHING WHEN IT DOESNT? needs this line to compile
+  return NULL;
 }
 
 int main(int argc, char* argv[]) {
@@ -101,7 +107,7 @@ int main(int argc, char* argv[]) {
   printf("\n");
 
   srand(time(0));
-  struct ppm_pixel *pallet = calloc(maxIterations, sizeof(struct ppm_pixel)); //read_ppm(argv[1], &w, &h); 
+  struct ppm_pixel *pallet = calloc(maxIterations, sizeof(struct ppm_pixel));
   
   int basered = rand() % 255;
   int basegreen = rand() % 255;
@@ -113,11 +119,11 @@ int main(int argc, char* argv[]) {
  // printf("pallet: r %d, g %d, b %d\n", pallet[i].red, pallet[i].green, pallet[i].blue);
   }
 
-  struct ppm_pixel *to_pass = mmap(NULL, sizeof(struct ppm_pixel)*(size)*(size), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-  
-  pthread_t q[4];//, q2, q3, q4;
+  pthread_t *thread_array = malloc(numProcesses * sizeof(pthread_t));
+  struct ppm_pixel *to_pass = malloc(sizeof(struct ppm_pixel)*(size)*(size));
   struct mandel_pack q_pack[4];
-  
+  long *thread_ids = malloc(numProcesses*sizeof(long));
+
   //quadrant 1
     q_pack[0].start_col = 0;
     q_pack[0].end_col = 240;
@@ -143,21 +149,26 @@ int main(int argc, char* argv[]) {
     q_pack[2].to_pass = to_pass;
 
   //quadrant 4 
-    q_pack[3].start_col = 0;
-    q_pack[3].end_col = 240;
-    q_pack[3].start_row = 0;
-    q_pack[3].end_row = 240;
+    q_pack[3].start_col = 240;
+    q_pack[3].end_col = 480;
+    q_pack[3].start_row = 240;
+    q_pack[3].end_row = 480;
     q_pack[3].pallet = pallet;
     q_pack[3].to_pass = to_pass;
 
   for (int i = 0; i < numProcesses; i++){
-    if (pthread_create(&q[i], NULL, &mandelbrot, (void *)&q_pack[i]) != 0){ //var pointer, NULL, function pointer, function args pointers
+    if (pthread_create(&thread_array[i], NULL, &mandelbrot, (void *)&q_pack[i]) != 0){ //var pointer, NULL, function pointer, function args pointers
       printf("ERROR: thread q%d could not be created.\n", i);
       exit(1);
     }
-    if (pthread_join(q[i], NULL) != 0){ //actual var, return val for function ret
+  }
+
+  for (int i = 0; i < numProcesses; i++){
+    if (pthread_join(thread_array[i], NULL) != 0){ //actual var, return val for function ret
       printf("ERROR: thread q%d could not be joined.\n", i);
       exit(1);
+    } else {
+      printf("Thread) %ld finished\n", thread_array[i]); 
     }
   }
 
@@ -187,8 +198,12 @@ int main(int argc, char* argv[]) {
 
   write_ppm(filename, to_pass, size, size);
 
-  //free(to_pass);
-  //to_pass = NULL;
-  //free(pallet);
-  //pallet = NULL;
+  free(to_pass);
+  to_pass = NULL;
+  free(pallet);
+  pallet = NULL;
+  free(thread_array);
+  thread_array = NULL;
+  free(thread_ids);
+  thread_ids = NULL;
 }

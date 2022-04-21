@@ -45,7 +45,7 @@ void write_ppm(const char* filename, struct ppm_pixel* pixels, int w, int h) {
   fprintf(fp, "# comments\n");
   fprintf(fp, "%d %d\n", w, h);
   fprintf(fp, "%d\n", 255);
-  fwrite(pixels->colors, 6, 3*w*h, fp);
+  fwrite(pixels, sizeof(struct ppm_pixel), w*h, fp);
 
   fclose(fp);
 }
