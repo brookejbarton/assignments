@@ -11,45 +11,8 @@
 #include <string.h>
 #include <sys/mman.h>
 
-
-void post_fork(double timer, int size, struct ppm_pixel *to_pass, struct ppm_pixel *pallet){
-  printf("Computed mandelbrot set (%dx%d) in %f seconds\n", size, size, timer);
-  
-  int timestamp = time(0);
-  char name1[] = "mandelbrot-";
-  char sizestr[20];
-  sprintf(sizestr, "%d", size);
-  strcat(name1, sizestr);
-  strcat(name1,"-");
-  char timestr[20];
-  sprintf(timestr, "%d", timestamp);
-  strcat(name1, timestr);
-  strcat(name1, ".ppm");
-  const char *filename = name1;
-
-  if (filename == NULL){
-    printf("Unable to create file.\n");
-    exit(1);
-  }
-
-  printf("Writing file: %s\n", name1);
-
-  write_ppm(filename, to_pass, size, size);
-
-  free(to_pass);
-  to_pass = NULL;
-  free(pallet);
-  pallet = NULL;
-}
-
-void mandelbrot(int start_col, int end_col, int start_row, int end_row, struct ppm_pixel *pallet, struct ppm_pixel *to_pass){
-  float xmin = -2.0;
-  float xmax = 0.47;
-  float ymin = -1.12;
-  float ymax = 1.12;
-  int maxIterations = 1000;
-  int size = 240;
-  
+void mandelbrot(int start_col, int end_col, int start_row, int end_row, struct ppm_pixel *pallet, struct ppm_pixel *to_pass, 
+                float xmin, float xmax, float ymin, float ymax, int maxIterations, int size){
   // compute image
   for (int i = start_col; i < end_col; i++){ 
     for (int j = start_row; j < end_row; j++){
@@ -116,7 +79,7 @@ int main(int argc, char* argv[]) {
   printf("  Y range = [%.4f,%.4f]\n", ymin, ymax);
 
   srand(time(0));
-  struct ppm_pixel *pallet = calloc(maxIterations, sizeof(struct ppm_pixel)); //read_ppm(argv[1], &w, &h); 
+  struct ppm_pixel *pallet = calloc(maxIterations, sizeof(struct ppm_pixel));
   
   int basered = rand() % 255;
   int basegreen = rand() % 255;
@@ -125,26 +88,36 @@ int main(int argc, char* argv[]) {
     pallet[i].red = basered + rand() % 100 - 50; //rand() % 255;
     pallet[i].green = basegreen + rand() % 100 - 50; //rand() % 255;
     pallet[i].blue = baseblue + rand() % 100 - 50; //rand() % 255;
- // printf("pallet: r %d, g %d, b %d\n", pallet[i].red, pallet[i].green, pallet[i].blue);
   }
-
-  //allocating shared memory
-
-  struct ppm_pixel *to_pass = mmap(NULL, sizeof(struct ppm_pixel)*(size)*(size), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);//malloc(sizeof(struct ppm_pixel)*(size)*(size));
 
   int start_col = 0;
   int end_col = 240;
 
   int start_row = 0;
   int end_row = 240;
-  
+
+  //getting shared memory
+  int shmid;
+  shmid = shmget(IPC_PRIVATE, sizeof(struct ppm_pixel)*(size)*(size), 0644 | IPC_CREAT);
+  if (shmid == -1) {
+    perror("Error: cannot initialize shared memory\n");
+    exit(1);
+  }
+
+  struct ppm_pixel *to_pass = shmat(shmid, NULL, 0);
+  if (to_pass == (void*) -1) {
+    perror("Error: cannot access shared memory\n");
+    exit(1);
+  } 
+
   for (int i = 0; i < numProcesses; i++){
-    if (fork() == 0){
-      mandelbrot(start_col, end_col, start_row, end_row, pallet, to_pass);
-      printf("Launched child process: %d\n", getpid());
+    int pid = fork();
+    if (pid == 0) {
       printf("%d) Sub-image block: cols (%d, %d) to rows (%d, %d)\n", getpid(), start_col, end_col, start_row, end_row);
+      mandelbrot(start_col, end_col, start_row, end_row, pallet, to_pass, xmin, xmax, ymin, ymax, maxIterations, size);  
+      exit(0);
     } else {
-      wait(NULL);
+      printf("Launched child process: %d\n", pid);
     }
 
     if (i == 0){
@@ -164,10 +137,48 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  printf("Child process complete: %d\n", getpid());
+  for (int i = 0; i < numProcesses; i++) {
+    int status;
+    int pid = wait(&status);
+    printf("Child process complete: %d\n", pid);
+  }
 
   gettimeofday(&tend, NULL);
   timer = tend.tv_sec - tstart.tv_sec + (tend.tv_usec - tstart.tv_usec)/1.e6;
 
-  post_fork(timer, size, to_pass, pallet);
+  printf("Computed mandelbrot set (%dx%d) in %f seconds\n", size, size, timer);
+  
+  int timestamp = time(0);
+  char name1[] = "multi-mandelbrot-";
+  char sizestr[20];
+  sprintf(sizestr, "%d", size);
+  strcat(name1, sizestr);
+  strcat(name1,"-");
+  char timestr[20];
+  sprintf(timestr, "%d", timestamp);
+  strcat(name1, timestr);
+  strcat(name1, ".ppm");
+  const char *filename = name1;
+
+  if (filename == NULL){
+    printf("Unable to create file.\n");
+    exit(1);
+  }
+
+  printf("Writing file: %s\n", name1);
+
+  write_ppm(filename, to_pass, size, size);
+
+  if (shmdt(to_pass) == -1) {
+    perror("Error: cannot detatch from shared memory\n");
+    exit(1);
+  }
+
+  if (shmctl(shmid, IPC_RMID, 0) == -1) {
+    perror("Error: cannot remove shared memory\n");
+    exit(1);
+  }
+
+  free(pallet);
+  pallet = NULL;
 }
