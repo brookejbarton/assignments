@@ -176,8 +176,8 @@ int main(int argc, char* argv[]) {
   printf("\nComputed mandelbrot set (%dx%d) in %f seconds\n", size, size, timer);
   
   int timestamp = time(0);
-  char name1[] = "mandelbrot-";
-  char sizestr[20];
+  char name1[] = "thread-mandelbrot-";
+  char sizestr[20] = "";
   sprintf(sizestr, "%d", size);
   strcat(name1, sizestr);
   strcat(name1,"-");
