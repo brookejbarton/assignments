@@ -47,7 +47,7 @@ void mandelbrot(int start_col, int end_col, int start_row, int end_row, struct p
 }
 
 int main(int argc, char* argv[]) {
-  int size = 480;
+  int size = 2000;
   float xmin = -2.0;
   float xmax = 0.47;
   float ymin = -1.12;
@@ -91,10 +91,10 @@ int main(int argc, char* argv[]) {
   }
 
   int start_col = 0;
-  int end_col = 240;
+  int end_col = size/2;
 
   int start_row = 0;
-  int end_row = 240;
+  int end_row = size/2;
 
   //getting shared memory
   int shmid;
@@ -115,6 +115,8 @@ int main(int argc, char* argv[]) {
     if (pid == 0) {
       printf("%d) Sub-image block: cols (%d, %d) to rows (%d, %d)\n", getpid(), start_col, end_col, start_row, end_row);
       mandelbrot(start_col, end_col, start_row, end_row, pallet, to_pass, xmin, xmax, ymin, ymax, maxIterations, size);  
+      free(pallet);
+      pallet = NULL;
       exit(0);
     } else {
       printf("Launched child process: %d\n", pid);
@@ -122,18 +124,18 @@ int main(int argc, char* argv[]) {
 
     if (i == 0){
       start_col = end_col;
-      end_col+=240;
+      end_col+=(size/2);
     }
     if (i == 1){
       start_col = 0;
-      end_col = 240;
+      end_col = (size/2);
 
       start_row = end_row;
-      end_row+=240;
+      end_row+=(size/2);
     }
     if (i == 2){
       start_col = end_col;
-      end_col+=240;
+      end_col+=(size/2);
     }
   }
 
@@ -150,7 +152,7 @@ int main(int argc, char* argv[]) {
   
   int timestamp = time(0);
   char name1[] = "multi-mandelbrot-";
-  char sizestr[20];
+  char sizestr[20] = "";
   sprintf(sizestr, "%d", size);
   strcat(name1, sizestr);
   strcat(name1,"-");
