@@ -7,48 +7,34 @@
 // TODO: Implement this function
 // Feel free to change the function signature if you prefer to implement an 
 // array of arrays
-struct ppm_pixel** read_ppm(const char* filename, int* w, int* h) {
- 
- if (filename == NULL){
-    printf("Error: unable to open file %s\n", filename);
+struct ppm_pixel* read_ppm(const char* filename, int* w, int* h) {
+  struct ppm_pixel *ret_pix;
+  char buffer[128];
+
+  
+  FILE *fp = fopen(filename, "r");
+  
+  
+  fgets(buffer, 128, fp);
+  if (buffer[0] != 'P' || buffer[1] != '3'){
+    printf("ERROR: wrong kind of file.");
     exit(1);
   }
   
-  struct ppm_pixel *matrx = malloc(sizeof(ppm_pixel *) * (h*w));
-  char *minimatrx =  malloc(sizeof(char)*1024);
-  char *buffer = malloc(sizeof(char)*1024);
-  char *token;
-  char *whitespace = "  \r";
-  bool not_header = false;
-  int pos = 0;
-
-  if (minimatrx == NULL || buffer == NULL || token == NULL){
-    printf("ERROR: malloc failed!\n");
-    exit(1);
-  }
-
-  while (buffer != NULL){
-    buffer = fgets(buffer, 1024*sizeof(char), *filename);
-    token = strtok(buffer, whitespace);
-      
-    while (token != NULL){
-      if (strlen(token) == 3 && not_header == true){
-        for (int i = 0; i < strlen(token); i++){
-          if (i%3 == 0){
-            pos+=1;
-          }
-          minimatrx[pos] = *token[i];
-        }
-        strcat(matrx, minimatrx);
-      } else {
-        not_header = true;
-        token = strtok(NULL, whitespace);
-      }
+  fgets(buffer, 128, fp);
+  if (buffer[0] == '#'){
+    while (buffer[0] == '#'){
+      fgets(buffer, 128, fp);
     }
   }
   
+  sscanf(buffer, "%d %d", w, h);
+  ret_pix = malloc(sizeof(struct ppm_pixel *)*(*w)*(*h));
+
+  fgets(buffer, 128, fp);  
+  fread(ret_pix, sizeof(struct ppm_pixel), (*w)*(*h), fp);
+  fclose(fp);
   
-  
-  return NULL;
+  return ret_pix;
 }
 
